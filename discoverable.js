@@ -189,18 +189,6 @@ Package.prototype.getModules = function(filter) {
     }.bind(this));
 };
 
-Package.prototype.require = function(filter) {
-    if (this.has(type)) {
-        var pkg = this;
-
-        return this.modules[type].map(function(module) {
-            return module.require();
-        });
-    }
-
-    return [];
-};
-
 Package.prototype.test = function(filter) {
     if (!filter) {
         return true;
@@ -219,6 +207,18 @@ Package.prototype.has = function(moduleType, moduleName) {
             return match(module.name, moduleName);
         })
     );
+};
+
+Package.prototype.require = function(filter) {
+    if (this.has(type)) {
+        var pkg = this;
+
+        return this.modules[type].map(function(module) {
+            return module.require();
+        });
+    }
+
+    return [];
 };
 
 //  __  __           _       _

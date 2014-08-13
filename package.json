@@ -9,11 +9,11 @@
   "main": "discoverable.js",
   "dependencies": {
     "bluebird": "2.2.2",
+    "debug": "1.0.4",
     "glob": "4.0.5",
     "lodash": "2.4.1"
   },
   "devDependencies": {
-    "debug": "1.0.4",
     "tape": "2.14.0"
   },
   "scripts": {
