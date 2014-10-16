@@ -141,7 +141,7 @@ Returns:
 ```
 {
     type: 'type',
-    package: { filename: '/path/to/package.json', json: {} },
+    package: 'name', // from "name" in package.json or directory name
     filename: '/path/to/module.js',
     exports: null, // might be defined if previously required
     require: function() {

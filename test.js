@@ -37,6 +37,36 @@ test('explicit packages', function(t) {
     .nodeify(t.end);
 });
 
+test('implicit packages', function(t) {
+    var catalog = new discoverable.Catalog(path.resolve(__dirname, 'examples/implicit'));
+
+    Promise.all([
+        catalog.getModules('type1').then(function(modules) {
+            t.equal(modules.length, 2);
+
+            modulesEqual(t, modules[0], {
+                type: 'type1',
+                package: 'package1',
+                filename: 'module1.js',
+                exports: null
+            });
+
+            modulesEqual(t, modules[1], {
+                type: 'type1',
+                package: 'package1',
+                filename: 'module2.js',
+                exports: null
+            });
+        }),
+
+        catalog.discover('type2', function(err, modules) {
+            t.equal(modules.length, 1);
+            t.equal(modules[0], 'type2.module1');
+        })
+    ])
+    .nodeify(t.end);
+});
+
 function modulesEqual(t, a, b) {
     t.equal(a.type, b.type);
     t.equal(a.package, b.package);

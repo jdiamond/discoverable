@@ -54,27 +54,39 @@ Catalog.prototype.addPackages = function(rootPath) {
                 var packages = pkg.discoverable.packages;
                 if (typeof packages === 'string') {
                     packages = [ packages ];
+                } else if (typeof packages === 'object' && !Array.isArray(packages)) {
+                    packages = Object.keys(packages).map(function(glob) {
+                        return {
+                            glob: glob,
+                            embedded: { discoverable: packages[glob] }
+                        };
+                    });
                 }
-                return packages;
+                return packages.map(function(package) {
+                    return typeof package === 'string'
+                        ? { glob: package }
+                        : package
+                    ;
+                });
             }
             return [];
         })
         .each(function(package) {
-            return globAsync(slash(package), { cwd: rootPath }).each(function(packagePath) {
-                return this.addPackage(path.resolve(rootPath, packagePath));
+            return globAsync(slash(package.glob), { cwd: rootPath }).each(function(packagePath) {
+                return this.addPackage(path.resolve(rootPath, packagePath), package.embedded);
             }.bind(this));
         })
     ;
 };
 
-Catalog.prototype.addPackage = function(packagePath) {
+Catalog.prototype.addPackage = function(packagePath, embedded) {
     debug('addPackage %j', packagePath);
 
     return Promise
         .bind(this)
-        .then(function() { return json(packagePath); })
+        .then(function() { return embedded || json(packagePath); })
         .then(function(pkg) {
-            var package = new Package(pkg.name);
+            var package = new Package(pkg.name || path.basename(packagePath));
 
             if (pkg.discoverable && pkg.discoverable.modules) {
                 var modules = pkg.discoverable.modules;

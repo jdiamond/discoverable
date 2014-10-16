@@ -1,0 +1,14 @@
+{
+  "name": "root1",
+  "private": true,
+  "discoverable": {
+    "packages": {
+      "lib/*": {
+        "modules": {
+          "type1": "type1/*.js",
+          "type2": "type2/*.js"
+        }
+      }
+    }
+  }
+}
