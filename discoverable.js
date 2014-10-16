@@ -28,10 +28,11 @@ function Catalog(options) {
     this.promise = null;
 }
 
-Catalog.prototype.discover = function() {
+Catalog.prototype.init = function() {
     if (!this.promise) {
         if (this.options.root) {
-            debug('discover %j', this.options.root);
+            debug('init %j', this.options.root);
+
             this.promise = this.addPackages(this.options.root).return(this.packages);
         } else {
             // Use require.main to find root?
@@ -66,7 +67,7 @@ Catalog.prototype.addPackages = function(rootPath) {
     ;
 };
 
-Catalog.prototype.addPackage = function(packagePath, callback) {
+Catalog.prototype.addPackage = function(packagePath) {
     debug('addPackage %j', packagePath);
 
     return Promise
@@ -92,21 +93,21 @@ Catalog.prototype.addPackage = function(packagePath, callback) {
     ;
 };
 
-Catalog.prototype.getPackages = function(filter, callback) {
+Catalog.prototype.getPackages = function(type, callback) {
     return this
-        .discover()
+        .init()
         .filter(function(package) {
-            return package.test(filter);
+            return package.has(type);
         })
         .nodeify(callback)
     ;
 };
 
-Catalog.prototype.getModules = function(filter, callback) {
+Catalog.prototype.getModules = function(type, callback) {
     return this
-        .getPackages(filter)
+        .getPackages(type)
         .reduce(function(modules, package) {
-            return modules.concat(package.getModules(filter));
+            return modules.concat(package.getModules(type));
         }, [])
         .all()
         .then(_.flatten)
@@ -114,11 +115,11 @@ Catalog.prototype.getModules = function(filter, callback) {
     ;
 };
 
-Catalog.prototype.require = function(filter, callback) {
+Catalog.prototype.discover = function(type, callback) {
     return this
-        .getModules(filter)
+        .getModules(type)
         .reduce(function(exports, module) {
-            return exports.concat(module.require(filter));
+            return exports.concat(module.require());
         }, [])
         .nodeify(callback)
     ;
@@ -133,7 +134,7 @@ Catalog.prototype.require = function(filter, callback) {
 
 function Package(name) {
     this.name = name;
-    this._modules = {};
+    this.modules = {};
 }
 
 Package.prototype.addModules = function(packageDir, type, modules) {
@@ -155,70 +156,28 @@ Package.prototype.addModules = function(packageDir, type, modules) {
 Package.prototype.addModule = function(type, filename) {
     debug('addModule %j', [ type, filename ]);
 
-    if (!this._modules[type]) {
-        this._modules[type] = [];
+    if (!this.modules[type]) {
+        this.modules[type] = [];
     }
 
-    var name = path.basename(filename);
-    name = name.slice(0, -path.extname(name).length);
-
-    this._modules[type].push(new Module(this.name, type, name, filename));
+    this.modules[type].push(new Module(type, this.name, filename));
 };
 
-Package.prototype.getModules = function(filter) {
-    return new Promise(function(resolve, reject) {
-        if (!filter) {
-            return resolve([]);
-        }
-
-        var moduleType = filter;
-        var moduleName;
-
-        if (typeof filter === 'object') {
-            moduleType = filter.type;
-            moduleName = filter.module;
-        }
-
-        if (!moduleType || !this._modules[moduleType]) {
-            return resolve([]);
-        }
-
-        resolve(this._modules[moduleType].filter(function(module) {
-            return match(module.name, moduleName);
-        }));
-    }.bind(this));
+Package.prototype.getModules = function(type) {
+    return type && this.modules[type] || [];
 };
 
-Package.prototype.test = function(filter) {
-    if (!filter) {
-        return true;
-    } else if (typeof filter === 'string') {
-        return this.has(filter);
-    } else if (typeof filter === 'object') {
-        return match(this.name, filter.package) && this.has(filter.type, filter.module);
-    }
-};
-
-Package.prototype.has = function(moduleType, moduleName) {
-    return !moduleType || (
-        this._modules[moduleType] &&
-        this._modules[moduleType].length > 0 &&
-        this._modules[moduleType].some(function(module) {
-            return match(module.name, moduleName);
-        })
+Package.prototype.has = function(type) {
+    return !type || (
+        this.modules[type] &&
+        this.modules[type].length > 0
     );
 };
 
-Package.prototype.require = function(filter) {
-    if (this.has(type)) {
-        var pkg = this;
-
-        return this.modules[type].map(function(module) {
-            return module.require();
-        });
-    }
-
-    return [];
+Package.prototype.require = function(type) {
+    return this.getModules[type].map(function(module) {
+        return module.require();
+    });
 };
 
 //  __  __           _       _
@@ -227,28 +186,15 @@ Package.prototype.require = function(filter) {
 // | |  | | (_) | (_| | |_| | |  __/
 // |_|  |_|\___/ \__,_|\__,_|_|\___|
 
-function Module(package, type, name, filename) {
-    this.package = package;
+function Module(type, package, filename) {
     this.type = type;
-    this.name = name;
+    this.package = package;
     this.filename = filename;
     this.exports = null;
 }
 
-Module.prototype.require = function(callback) {
-    if (this.exports) {
-        return Promise.resolve(this.exports).nodeify(callback);
-    }
-
-    var module = this;
-
-    return new Promise(function(resolve, reject) {
-        debug('require %j', module.filename);
-
-        module.exports = require(module.filename);
-
-        resolve(module.exports);
-    }).nodeify(callback);
+Module.prototype.require = function() {
+    return this.exports || (this.exports = require(this.filename));
 };
 
 //  _   _ _   _ _ _ _   _
@@ -274,16 +220,10 @@ function json(dir) {
     ;
 }
 
-function match(value, filter) {
-    if (!filter) {
-        return true;
-    } else if (typeof filter === 'string') {
-        // use minimatch?
-        return value === filter;
-    } else if (Array.isArray(filter)) {
-        // use minimatch?
-        return filter.indexOf(value) !== -1;
-    }
+function mainPackage() {
+    // Main module could be in sub-dir.
+    // Look up path to find closest package.json.
+    return path.resolve(path.dirname(require.main && require.main.filename));
 }
 
 //  _____                       _
@@ -293,7 +233,10 @@ function match(value, filter) {
 // |_____/_/\_\ .__/ \___/|_|   \__|___/
 //            |_|
 
-module.exports = new Catalog(path.resolve(path.dirname(require.main && require.main.filename)));
+var defaultCatalog = new Catalog(mainPackage());
+
+module.exports = defaultCatalog.discover.bind(defaultCatalog);
+module.exports.modules = defaultCatalog.getModules.bind(defaultCatalog);
 
 module.exports.Catalog = Catalog;
 module.exports.Package = Package;

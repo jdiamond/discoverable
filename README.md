@@ -1,9 +1,9 @@
 # Discoverable
 
-Discover packages and modules to compose your applications.
+Discover packages and modules in them to compose your applications.
 
 Discoverable adds the concept of module types. They're just strings that
-represent whatever abstraction your applications need.
+represent whatever abstractions your application needs.
 
 Applications declare what packages to scan for discoverable modules
 in their package.json.
@@ -20,41 +20,75 @@ npm i -S discoverable
 ## Usage
 
 ```
-    var discoverable = require('discoverable');
+var discoverable = require('discoverable');
 
-    var things = discoverable.require('things');
+discoverable('things', function(err, things) {
+  // use things here
+});
+
+// or
+
+discoverable('things').then(function(things) {
+  // use things here
+});
 ```
 
 ## Configuration
 
-Put this in your app's package.json:
+### Packages
+
+A package is discoverable if it has something like this in its package.json:
+
+```
+  "discoverable": {
+    "modules": {
+      "things": "lib/things/*.js",
+      "otherThings": "lib/other/*-thing.js"
+    }
+  }
+```
+
+To be more selective, do this:
+
+```
+  "discoverable": {
+    "modules": {
+      "things": [
+        "lib/thing1.js",
+        "lib/thing2.js"
+      ],
+      "otherThings": "lib/other/other-thing.js"
+    }
+  }
+```
+
+There are no requirements on what modules must export, but they should be
+polymorphic for any given type.
+
+### Applications
+
+If the packages you need are public and discoverable, install them with npm
+and put this in your package.json:
 
 ```
   "discoverable": {
     "packages": "node_modules/*"
   }
-
 ```
 
-`packages` is a glob pattern or an array of glob patterns.
-
-Put this in your packages' package.json:
+If you want to be more selective, do this:
 
 ```
   "discoverable": {
-    "modules": {
-      "things": "lib/thing.js"
-    }
+    "packages": [
+      "node_modules/foo",
+      "node_modules/bar"
+    ]
   }
 ```
 
-The properties in `modules` map types to modules. The property name is the
-type name and the value is a glob pattern or an array of glob patterns.
-
-Relative paths are resolved from the directory containing this package.json.
-
-Applications can embed packages by setting `packages` to an object
-and then defining the module mappings in another object:
+If the packages you want to discover aren't discoverable (or not even
+proper packages), do this:
 
 ```
   "discoverable": {
@@ -68,43 +102,50 @@ and then defining the module mappings in another object:
   }
 ```
 
-With this configuration, it's not necessary to put package.json files in the
-`lib/*` directories.
+You can be as selective as you want.
 
 ## API
 
-The default export is a `Catalog` instance. It contains `Package` instances
-which contain `Module` instances.
+The default export is a function:
 
-Constructors for all three of those types are exported so you could construct
-your own instances or extend their prototypes.
+```
+var discoverable = require('discoverable');
+```
 
-### Catalog
+### discoverable
 
-- `addPackages(rootPath)`: discover packages for an application
-- `addPackage(packagePath)`: discover modules for a package
-- `getPackages(filter)`: query for packages
-- `getModules(filter)`: query for modules
-- `require(type)`: require modules
+Discovers and requires modules of the given type.
 
-`filter` can be `{ package: 'name', type: 'type', module: 'name' }`.
+Arguments:
 
-When `filter` is a string, treated as `{ type: filter }`.
+- `type` - `String`
+- `callback` - `function(err, modules)` (optional)
 
-### Package
+Returns:
 
-- `name`: the package name
-- `addModules(packageDir, type, modules)`: add modules to the package
-- `addModule(type, filename)`: add a module to the package
-- `getModules(filter)`: query for modules
-- `test(filter)`: test a package against a filter
-- `has(type, name)`: test if a package has modules of a type with optional name
-- `require(type)`: synchronously require all modules of a type
+- `Promise` for `Array` of the modules' exports
 
-### Module
+### discoverable.modules
 
-- `package`: the package name
-- `type`: the module type
-- `name`: the module name
-- `filename`: the full path to the module
-- `require()`: synchronously `require` the module
+Discovers modules of a given type without require'ing them.
+
+Arguments:
+
+- `type` - `String`
+- `callback` - `function(err, modules)` (optional)
+
+Returns:
+
+- `Promise` for `Array` of modules objects that look like this:
+
+```
+{
+    type: 'type',
+    package: { filename: '/path/to/package.json', json: {} },
+    filename: '/path/to/module.js',
+    exports: null, // might be defined if previously required
+    require: function() {
+      // returns cached exports or requires and caches
+    }
+}
+```
