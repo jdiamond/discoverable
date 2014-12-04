@@ -249,6 +249,7 @@ var defaultCatalog = new Catalog(mainPackage());
 
 module.exports = defaultCatalog.discover.bind(defaultCatalog);
 module.exports.modules = defaultCatalog.getModules.bind(defaultCatalog);
+module.exports.default = defaultCatalog;
 
 module.exports.Catalog = Catalog;
 module.exports.Package = Package;

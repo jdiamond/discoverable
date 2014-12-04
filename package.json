@@ -1,6 +1,6 @@
 {
   "name": "discoverable",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": "Jason Diamond <jason@diamond.name>",
   "licenses": [ { "type": "MIT", "url": "http://jdiamond.mit-license.org/" } ],
   "repository" : { "type": "git", "url": "https://github.com/jdiamond/discoverable.git" },
