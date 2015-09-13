@@ -1,15 +1,16 @@
 # Discoverable
 
-Discover packages and modules in them to compose your applications.
+Discover packages and modules to compose your applications.
 
-Discoverable adds the concept of module types. They're just strings that
-represent whatever abstractions your application needs.
+Packages declare what types they provide and what modules implement those types
+in their package.json files.
 
-Applications declare what packages to scan for discoverable modules
-in their package.json.
+Applications declare what packages to scan for discoverable modules in their
+package.json files.
 
-Packages declare what types they provide and what modules implement
-those types in their package.json files.
+It's a layer of indirection between your code and your dependencies. Use
+`discover('foo')` in your code and configure what specific modules implement
+"foo" in your package.json.
 
 ## Install
 
@@ -20,15 +21,15 @@ npm i -S discoverable
 ## Usage
 
 ```
-var discoverable = require('discoverable');
+var discover = require('discoverable');
 
-discoverable('things', function(err, things) {
+discover('things').then(function(things) {
   // use things here
 });
 
 // or
 
-discoverable('things').then(function(things) {
+discover('things', function(err, things) {
   // use things here
 });
 ```
@@ -109,10 +110,10 @@ You can be as selective as you want.
 The default export is a function:
 
 ```
-var discoverable = require('discoverable');
+var discover = require('discoverable');
 ```
 
-### discoverable
+### discover
 
 Discovers and requires modules of the given type.
 
@@ -125,7 +126,7 @@ Returns:
 
 - `Promise` for `Array` of the modules' exports
 
-### discoverable.modules
+### discover.modules
 
 Discovers modules of a given type without require'ing them.
 
@@ -143,9 +144,10 @@ Returns:
     type: 'type',
     package: 'name', // from "name" in package.json or directory name
     filename: '/path/to/module.js',
+    name: 'module', // from filename
     exports: null, // might be defined if previously required
     require: function() {
-      // returns cached exports or requires and caches
+      // requires the module, later returns cached exports
     }
 }
 ```
