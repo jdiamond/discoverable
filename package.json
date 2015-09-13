@@ -2,19 +2,19 @@
   "name": "discoverable",
   "version": "0.1.1",
   "author": "Jason Diamond <jason@diamond.name>",
-  "licenses": [ { "type": "MIT", "url": "http://jdiamond.mit-license.org/" } ],
+  "license": "MIT",
   "repository" : { "type": "git", "url": "https://github.com/jdiamond/discoverable.git" },
   "description": "discover packages and modules to compose your applications",
   "keywords": [ "discover", "package", "module", "require" ],
   "main": "discoverable.js",
   "dependencies": {
-    "bluebird": "2.2.2",
-    "debug": "1.0.4",
-    "glob": "4.0.5",
-    "lodash": "2.4.1"
+    "bluebird": "2.10.0",
+    "debug": "2.2.0",
+    "glob": "5.0.14",
+    "lodash": "3.10.1"
   },
   "devDependencies": {
-    "tape": "2.14.0"
+    "tape": "4.2.0"
   },
   "scripts": {
     "test": "node test.js",
