@@ -202,6 +202,7 @@ function Module(type, package, filename) {
     this.type = type;
     this.package = package;
     this.filename = filename;
+    this.name = path.basename(filename, path.extname(filename));
     this.exports = null;
 }
 

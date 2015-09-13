@@ -18,6 +18,7 @@ test('explicit packages', function(t) {
                 type: 'type1',
                 package: 'package1',
                 filename: 'module1.js',
+                name: 'module1',
                 exports: null
             });
 
@@ -25,6 +26,7 @@ test('explicit packages', function(t) {
                 type: 'type1',
                 package: 'package1',
                 filename: 'module2.js',
+                name: 'module2',
                 exports: null
             });
         }),
@@ -48,6 +50,7 @@ test('implicit packages', function(t) {
                 type: 'type1',
                 package: 'package1',
                 filename: 'module1.js',
+                name: 'module1',
                 exports: null
             });
 
@@ -55,6 +58,7 @@ test('implicit packages', function(t) {
                 type: 'type1',
                 package: 'package1',
                 filename: 'module2.js',
+                name: 'module2',
                 exports: null
             });
         }),
@@ -71,5 +75,6 @@ function modulesEqual(t, a, b) {
     t.equal(a.type, b.type);
     t.equal(a.package, b.package);
     t.ok(new RegExp(b.filename.replace(/\./g, '\\.') + '$').test(a.filename));
+    t.equal(a.name, b.name);
     t.equal(a.exports, b.exports);
 }
